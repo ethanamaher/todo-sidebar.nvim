@@ -1,8 +1,8 @@
---- lua/todo-telescope/sidebar.lua
+--- lua/todo-sidebar/sidebar.lua
 
-local scanner = require("todo-telescope.scanner")
-local config = require("todo-telescope.config")
-local utils = require("todo-telescope.utils")
+local scanner = require("todo-sidebar.scanner")
+local config = require("todo-sidebar.config")
+local utils = require("todo-sidebar.utils")
 
 local M = {}
 
@@ -16,7 +16,7 @@ local sidebar_config = {}
 
 ---set up default sidebar_config with sidebar_defaults from config.lua
 --- default config is in config.lua can be modified by user in
---- require("todo-telescope").setup({})
+--- require("todo-sidebar").setup({})
 ---@param opts table sidebar from config.lua
 function M.setup(opts)
     sidebar_config = vim.tbl_deep_extend("force", {}, opts or {})

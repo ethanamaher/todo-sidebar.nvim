@@ -4,31 +4,12 @@ local scanner = require("todo-telescope.scanner")
 local telescope_integration = require("todo-telescope.telescope")
 local config = require("todo-telescope.config")
 local sidebar = require("todo-telescope.sidebar")
-local Path = require("plenary.path")
+local utils  = require("todo-telescope.utils")
 
-local function find_git_repo_root()
-    local file_path = vim.fn.expand("%:p")
-    local cur_path = Path:new(file_path)
-    local init_path = cur_path:is_file() and cur_path:parent():absolute() or cur_path:absolute()
-
-
-    local repo_root_cmd = { "git", "-C", vim.fn.fnameescape(init_path), "rev-parse", "--show-toplevel" }
-    local repo_root_list = vim.fn.systemlist(repo_root_cmd)
-    local repo_root = repo_root_list and repo_root_list[1]
-
-    if vim.vshell_error ~= nil then
-        if repo_root == "" then repo_root = nil end -- handle empty output
-        vim.notify("ERROR HERE", vim.log.levels.ERROR, { title="BetterGitBlame" })
-    end
-
-    if not repo_root then
-        vim.notify("Could not determine Git repository root. " .. tostring(parent_dir) .. " from " .. tostring(current_path), vim.log.levels.ERROR, { title="BetterGitBlame"})
-    end
-    return repo_root
-end
-
+--- used for telescope picker
+--- deprecated
 function M.scan_todos_telescope()
-    local repo_root = find_git_repo_root()
+    local repo_root = utils.find_git_repo_root()
     if not repo_root then return end
 
     if config.options.search_strategy == "git_grep" then

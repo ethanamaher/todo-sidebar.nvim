@@ -2,7 +2,8 @@ local M = {}
 
 local scanner = require("todo-telescope.scanner")
 local telescope_integration = require("todo-telescope.telescope")
-local config_module = require("todo-telescope.config")
+local config = require("todo-telescope.config")
+local sidebar = require("todo-telescope.sidebar")
 local Path = require("plenary.path")
 
 local function find_git_repo_root()
@@ -26,11 +27,11 @@ local function find_git_repo_root()
     return repo_root
 end
 
-function M.scan_todos()
+function M.scan_todos_telescope()
     local repo_root = find_git_repo_root()
     if not repo_root then return end
 
-    if config_module.options.search_strategy == "git_grep" then
+    if config.options.search_strategy == "git_grep" then
         scanner.find_todos_git_grep(repo_root, function(todo_items)
             if #todo_items == 0 then
                 return
@@ -45,9 +46,15 @@ function M.scan_todos()
 end
 
 function M.setup(user_opts)
-    config_module.setup(user_opts)
+    config.setup(user_opts)
 
-    vim.api.nvim_create_user_command("TelescopeTodo", M.scan_todos, {
+    vim.api.nvim_create_user_command("TelescopeTodo", M.scan_todos_telescope, {
+        desc = "Scan project for TODOs, FIXMEs, etc."
+    })
+
+    vim.api.nvim_create_user_command("TodoSidebarToggle", function()
+            sidebar.toggle()
+        end, {
         desc = "Scan project for TODOs, FIXMEs, etc."
     })
 end

@@ -16,6 +16,17 @@ M.defaults = {
     git_cmd = "git",
 
     git_grep_args = {},
+
+    sidebar = {
+        width = 40,
+        position = "right",
+        auto_focus = false,
+        auto_close_on_jump = false,
+        keymaps = {
+            jmp_to = "<CR>",
+            -- TODO add keybinds for various things
+        },
+    }
 }
 
 M.options = {}

@@ -5,7 +5,7 @@ local config
 
 local function get_config()
     if not config then
-        config = require("todo-telescope.config").options
+        config = require("todo-sidebar.config").options
     end
     return config
 end

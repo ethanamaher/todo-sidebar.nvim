@@ -1,7 +1,7 @@
 local M = {}
 
-local config = require("todo-telescope.config")
-local sidebar = require("todo-telescope.sidebar")
+local config = require("todo-sidebar.config")
+local sidebar = require("todo-sidebar.sidebar")
 
 function M.setup(user_opts)
     config.setup(user_opts)

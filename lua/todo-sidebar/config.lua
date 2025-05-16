@@ -20,11 +20,20 @@ M.defaults = {
     sidebar = {
         width = 40,
         position = "right",
-        auto_focus = false,
+        auto_focus = true,
         auto_close_on_jump = false,
         keymaps = {
-            jmp_to = "<CR>",
-            -- TODO add keybinds for various things
+            close           = "q",
+            refresh         = "r",
+            jmp_to          = "<CR>",
+            jmp_to_vsplit   = "<C-v>",
+            jmp_to_split    = "<C-s>",
+
+            next_item       = "j",
+            prev_item       = "k",
+
+            scroll_down     = "<C-d>",
+            scroll_up       = "<C-k>",
         },
     }
 }

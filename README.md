@@ -1,5 +1,5 @@
 <div align="center">
-    
+
 # todo-sidebar
 ##### previously todo-telescope
 </div>
@@ -24,10 +24,34 @@ opens any keyword hits in a navigable sidebar window
 * Show relevant files and the statement highlighted in a sidebar window
 * <CR> on any entries in sidebar to jump to that entry in code window
 ## Use
-### `:TodoSidebarToggle`
-* Open a side window with all keyword matches in the current git repo
-### `:TodoSidebarRefresh`
-* Refresh entries by searching again and updating current open sidebar
+
+
+
+### Toggle Sidebar
+toggle sidebar open or closed depending on current state
+```lua
+lua require("todo-sidebar.sidebar").toggle()
+```
+
+you can also open or close the sidebar with
+```lua
+lua require("todo-sidebar.sidebar").open()
+lua require("todo-sidebar.sidebar").close()()
+```
+calling open() when sidebar is already open will cause it to refresh the list items
+
+
+
+### Refresh Sidebar Directly
+you can refresh the sidebar directyly with
+```lua
+lua require("todo-sidebar.sidebar").toggle()
+```
+if the sidebar is not open it will just return out
+
+
+
+### Sidebar Navigation
 ## Setup
 ### Dependencies
 * Neovim (developed and tested on v0.10.4)

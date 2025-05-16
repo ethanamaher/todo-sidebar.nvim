@@ -133,9 +133,20 @@ end
 ---set up default key mappings for sidebar
 local function setup_mappings()
     local map_opts = { noremap = true, silent = true, buffer = state.bufnr }
-    vim.keymap.set("n", "<CR>", function()
-        M.jump_to_selected_item("edit")
-    end, map_opts)
+    local km = sidebar_config.keymaps
+
+    vim.keymap.set("n", km.close, function() M.close() end, map_opts)
+    vim.keymap.set("n", km.refresh, function() M.refresh_buffer_items() end, map_opts)
+
+    vim.keymap.set("n", km.jmp_to, function() M.jump_to_selected_item("edit") end, map_opts)
+    vim.keymap.set("n", km.jmp_to_vsplit, function() M.jump_to_selected_item("vsplit") end, map_opts)
+    vim.keymap.set("n", km.jmp_to_split, function() M.jump_to_selected_item("split") end, map_opts)
+
+    vim.keymap.set("n", km.next_item, "j", map_opts)
+    vim.keymap.set("n", km.prev_item, "k", map_opts)
+
+    vim.keymap.set("n", km.scroll_down, "<C-d>", map_opts)
+    vim.keymap.set("n", km.scroll_up, "<C-u>", map_opts)
 end
 
 ---instantiate the buffer for sidebar

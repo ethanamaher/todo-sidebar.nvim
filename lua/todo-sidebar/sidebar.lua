@@ -4,22 +4,29 @@ local scanner = require("todo-sidebar.scanner")
 local config = require("todo-sidebar.config")
 local utils = require("todo-sidebar.utils")
 
-local M = {}
+---@class TodoSidebar
+---@field bufnr number
+---@field winid number
+---@field line_data table
+local TodoSidebar = {}
+TodoSidebar.__index = TodoSidebar
 
-local state = {
-    bufnr = nil,
-    winid = nil,
-    line_data = {}
-}
-
-local sidebar_config = {}
-
----set up default sidebar_config with sidebar_defaults from config.lua
---- default config is in config.lua can be modified by user in
+function TodoSidebar:new(sidebar_config)
+    return setmetatable({
+        bufnr = nil,
+        winid = nil,
+        line_data = {},
+        sidebar_config = sidebar_config,
+    }, self)
+end
+---
+--- set up default sidebar_config with sidebar_defaults from config.lua
+--- get this working with custom options
 --- require("todo-sidebar").setup({})
----@param opts table sidebar from config.lua
-function M.setup(opts)
-    sidebar_config = vim.tbl_deep_extend("force", {}, opts or {})
+---@param opts? table|nil sidebar config options from config.lua
+function TodoSidebar:setup(opts)
+    local defaults = config.get_default_config()
+    self.sidebar_config = vim.tbl_extend("force", defaults, opts or {})
 end
 
 -- TODO highlight mappings for keywords and items in entry string
@@ -45,76 +52,74 @@ end
 
 ---populate the sidebar buffer with a table of keyword entry items
 ---@param items table table of keyword entries
-local function populate_sidebar_buffer(items)
-    if not state.bufnr or not vim.api.nvim_buf_is_valid(state.bufnr) then
+function TodoSidebar:populate_sidebar_buffer(items)
+    if not self.bufnr or not vim.api.nvim_buf_is_valid(self.bufnr) then
         return
     end
 
     local lines = {}
 
     ---clear past line_data
-    state.line_data = {}
+    self.line_data = {}
 
-    if #items == 0 then
+    if not items or #items == 0 then
        table.insert(lines, "No items found.")
     else
         for i, item in ipairs(items) do
             table.insert(lines, format_buf_line(item))
-            state.line_data[i] = item
+            self.line_data[i] = item
         end
     end
 
     ---set lines in buffer with lines table
-    vim.api.nvim_buf_set_option(state.bufnr, "modifiable", true)
-    vim.api.nvim_buf_set_lines(state.bufnr, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(state.bufnr, "modifiable", false)
-    vim.api.nvim_buf_set_option(state.bufnr, "modified", false)
+    vim.api.nvim_buf_set_option(self.bufnr, "modifiable", true)
+    vim.api.nvim_buf_set_lines(self.bufnr, 0, -1, false, lines)
+    vim.api.nvim_buf_set_option(self.bufnr, "modifiable", false)
+    vim.api.nvim_buf_set_option(self.bufnr, "modified", false)
 end
 
 ---refresh the items in the sidebar
 ---runs scanner.find_todos_git_grep to get an up to date refresh of any entries
 ---that need to be added to buffer
-function M.refresh_buffer_items()
-    if not state.bufnr or not vim.api.nvim_buf_is_valid(state.bufnr) then
-        -- sidebar no topen notify
+function TodoSidebar:refresh_buffer_items()
+    if not self.bufnr or not vim.api.nvim_buf_is_valid(self.bufnr) then
+        -- sidebar not open notify
         return
     end
 
     local repo_root = utils.find_git_repo_root()
     if not repo_root then
-        populate_sidebar_buffer({})
+        self:populate_sidebar_buffer({})
         return
     end
 
     vim.notify("Scanning for keywords...", vim.log.levels.INFO, { title = "TodoSidebar" })
-    scanner.find_todos_git_grep(repo_root, function(results)
-        populate_sidebar_buffer(results)
+    scanner.find_todos_git_grep(self.sidebar_config, repo_root, function(results)
+        self:populate_sidebar_buffer(results)
         vim.notify("TODOs updated", vim.log.levels.INFO, { title = "TodoSidebar" })
     end)
 end
 
 ---jump to a selected entry from sidebar
 ---@param jmp_command string jump command "edit" by default
-function M.jump_to_selected_item(jmp_command)
-    if not state.winid or not vim.api.nvim_win_is_valid(state.winid) then
-        return
-    end
+function TodoSidebar:select_menu_item(jmp_command)
+    --if not self.winid or not vim.api.nvim_win_is_valid(self.winid) then
+    --    return
+    --end
 
-    local cursor_pos = vim.api.nvim_win_get_cursor(state.winid)
+    local cursor_pos = vim.api.nvim_win_get_cursor(self.winid)
     -- line number of cursor in buffer
     local current_line_num = cursor_pos[1]
-    local item = state.line_data[current_line_num]
+    local item = self.line_data[current_line_num]
 
     if item then
         local filepath = item.file_absolute
         local lnum = item.line_number
 
-        local prev_winid = vim.api.nvim_get_current_win()
-
         -- switch focus to original window before opening
         local windows = vim.api.nvim_list_wins()
         for _, winid in ipairs(windows) do
-            if winid ~= state.winid and vim.api.nvim_win_get_buf(winid) then
+            if winid ~= self.winid and vim.api.nvim_win_get_buf(winid) then
                 local is_float = vim.api.nvim_win_get_config(winid).relative ~= ""
                 if not is_float then
                     vim.api.nvim_set_current_win(winid)
@@ -128,19 +133,26 @@ function M.jump_to_selected_item(jmp_command)
     else
         vim.notify("Error jumping to this item", vim.log.levels.WARN, { title = "TodoSidebar" })
     end
+
+    -- auto close on jump
+    if self.sidebar_config.auto_close_on_jump then
+        self:close_menu()
+    end
 end
 
 ---set up default key mappings for sidebar
-local function setup_mappings()
-    local map_opts = { noremap = true, silent = true, buffer = state.bufnr }
-    local km = sidebar_config.keymaps
+function TodoSidebar:setup_mappings()
+    local map_opts = { noremap = true, silent = true, buffer = self.bufnr }
+    local km = self.sidebar_config.keymaps
 
-    vim.keymap.set("n", km.close, function() M.close() end, map_opts)
-    vim.keymap.set("n", km.refresh, function() M.refresh_buffer_items() end, map_opts)
+    if km.close then
+        vim.keymap.set("n", km.close, function() self:close_menu() end, map_opts)
+    end
+    vim.keymap.set("n", km.refresh, function() self:refresh_buffer_items() end, map_opts)
 
-    vim.keymap.set("n", km.jmp_to, function() M.jump_to_selected_item("edit") end, map_opts)
-    vim.keymap.set("n", km.jmp_to_vsplit, function() M.jump_to_selected_item("vsplit") end, map_opts)
-    vim.keymap.set("n", km.jmp_to_split, function() M.jump_to_selected_item("split") end, map_opts)
+    vim.keymap.set("n", km.jmp_to, function() self:select_menu_item("edit") end, map_opts)
+    vim.keymap.set("n", km.jmp_to_vsplit, function() self:select_menu_item("vsplit") end, map_opts)
+    vim.keymap.set("n", km.jmp_to_split, function() self:select_menu_item("split") end, map_opts)
 
     vim.keymap.set("n", km.next_item, "j", map_opts)
     vim.keymap.set("n", km.prev_item, "k", map_opts)
@@ -149,83 +161,63 @@ local function setup_mappings()
     vim.keymap.set("n", km.scroll_up, "<C-u>", map_opts)
 end
 
----instantiate the buffer for sidebar
----@return number bufnr of created buffer
-local function instantiate_buffer()
-    state.bufnr = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_option(state.bufnr, "bufhidden", "hide")
-    vim.api.nvim_buf_set_option(state.bufnr, "buftype", "nofile")
-    vim.api.nvim_buf_set_option(state.bufnr, "swapfile", false)
-    vim.api.nvim_buf_set_option(state.bufnr, "filetype", "TodoSidebar")
-
-    return state.bufnr
-end
-
----instantiate the window for sidebar
----@return number winid of created window
-local function instantiate_window()
-    local win_cmd_prefix = sidebar_config.position == "left" and "topleft " or "botright "
-    vim.cmd(win_cmd_prefix .. "vertical " .. sidebar_config.width .. " new")
-    state.winid = vim.api.nvim_get_current_win()
-    return state.winid
-end
-
 
 ---create the window and buffer for sidebar
-local function create_sidebar_window_and_buffer()
-    instantiate_buffer()
-    if not state.bufnr then
-        return
-    end
+--- only called at beginning, buf and win should not exist
+function TodoSidebar:_create_sidebar()
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_option(bufnr, "bufhidden", "hide")
+    vim.api.nvim_buf_set_option(bufnr, "buftype", "nofile")
+    vim.api.nvim_buf_set_option(bufnr, "swapfile", false)
+    vim.api.nvim_buf_set_option(bufnr, "filetype", "TodoSidebar")
 
-    instantiate_window()
-    if not state.winid then
-        return
-    end
-    vim.api.nvim_win_set_buf(state.winid, state.bufnr)
+    local win_cmd_prefix = self.sidebar_config.position == "left" and "topleft " or "botright "
+    vim.cmd(win_cmd_prefix .. "vertical " .. self.sidebar_config.width .. " new")
+    local winid = vim.api.nvim_get_current_win()
 
-    setup_mappings()
+    vim.api.nvim_win_set_buf(winid, bufnr)
+    return winid, bufnr
 end
 
 ---open sidebar window and refresh_buffer_items
-function M.open()
-    if state.winid and vim.api.nvim_win_is_valid(state.winid) then
-        if sidebar_config.auto_focus then
-            vim.api.nvim_set_current_win(state.winid)
+function TodoSidebar:open_menu()
+    -- if window exists
+    if self.winid and vim.api.nvim_win_is_valid(self.winid) then
+        if self.sidebar_config.auto_focus then
+            vim.api.nvim_set_current_win(self.winid)
         end
-        M.refresh_buffer_items()
+        self:refresh_buffer_items()
         return
     end
 
-    create_sidebar_window_and_buffer()
-    M.refresh_buffer_items()
+    local winid, bufnr = self:_create_sidebar()
+    self.winid = winid
+    self.bufnr = bufnr
+
+    self:setup_mappings()
+    self:refresh_buffer_items()
 end
 
----close sidebar window and clear line_data
-function M.close()
-    if state.winid and vim.api.nvim_win_is_valid(state.winid) then
-        vim.api.nvim_win_close(state.winid, true)
-        state.winid = nil
+---close sidebar window, preserves buffer and line data
+function TodoSidebar:close_menu()
+    if self.winid and vim.api.nvim_win_is_valid(self.winid) then
+        vim.api.nvim_win_close(self.winid, true)
+        self.winid = nil
     end
-
-    if state.bufnr and vim.api.nvim_buf_is_valid(state.bufnr) then
-        vim.api.nvim_buf_delete(state.bufnr, { force = true })
-        state.bufnr = nil
-    end
-    state.line_data = {}
 end
 
 ---toggle sidebar window open and closed
-function M.toggle()
-    if vim.tbl_isempty(sidebar_config) then
-        M.setup(config.options.sidebar or {})
+function TodoSidebar:toggle()
+    -- get this working for custom opts
+    if vim.tbl_isempty(self.sidebar_config) then
+        self:setup(config.get_default_config() or {})
     end
 
-    if state.winid and vim.api.nvim_win_is_valid(state.winid) then
-        M.close()
+    if self.winid and vim.api.nvim_win_is_valid(self.winid) then
+        self:close_menu()
     else
-        M.open()
+        self:open_menu()
     end
 end
 
-return M
+return TodoSidebar

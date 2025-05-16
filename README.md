@@ -1,5 +1,11 @@
+<div align="center">
+    
 # todo-sidebar
-## previously todo-telescope
+##### previously todo-telescope
+</div>
+
+---
+
 a lazy nvim plugin created to find TODO, FIXME, REVIEW, etc statements in a git repo
 
 made to make it easier to find any, kept merging too many into main and got chastised

@@ -3,22 +3,22 @@ local Job = require("plenary.job")
 local Path = require("plenary.path")
 local config
 
-local function get_config()
+local function get_config(sidebar_config)
+    config = sidebar_config
     if not config then
-        config = require("todo-sidebar.config").options
+        config = require("todo-sidebar.config").get_default_config().default
     end
     return config
 end
 
 local M = {}
 
-function M.find_todos_git_grep(repo_root, callback)
-    local current_config = get_config()
+function M.find_todos_git_grep(sidebar, repo_root, callback)
+    local current_config = get_config(sidebar)
     if not repo_root then
         callback({})
         return
     end
-
     local patterns = {}
     for _, kw in ipairs(current_config.keywords) do
         table.insert(patterns, "\\b" .. kw .. "\\b")

@@ -20,13 +20,13 @@ function TodoSidebar:new()
         line_data = {},
     }, self)
 end
-
+---
 --- set up default sidebar_config with sidebar_defaults from config.lua
---- default config is in config.lua can be modified by user in
+--- get this working with custom options
 --- require("todo-sidebar").setup({})
 ---@param opts? table|nil sidebar config options from config.lua
 function TodoSidebar:setup(opts)
-    local defaults = (config.options and config.options.sidebar) or {}
+    local defaults = config.get_default_config()
     sidebar_config = vim.tbl_deep_extend("force", {}, defaults, opts or {})
 end
 
@@ -95,7 +95,7 @@ function TodoSidebar:refresh_buffer_items()
     end
 
     vim.notify("Scanning for keywords...", vim.log.levels.INFO, { title = "TodoSidebar" })
-    scanner.find_todos_git_grep(repo_root, function(results)
+    scanner.find_todos_git_grep(sidebar_config, repo_root, function(results)
         self:populate_sidebar_buffer(results)
         vim.notify("TODOs updated", vim.log.levels.INFO, { title = "TodoSidebar" })
     end)
@@ -139,7 +139,7 @@ end
 ---set up default key mappings for sidebar
 function TodoSidebar:setup_mappings()
     local map_opts = { noremap = true, silent = true, buffer = self.bufnr }
-    local km = sidebar_config.keymaps
+    local km = sidebar_config.sidebar.keymaps
 
     vim.keymap.set("n", km.close, function() self:close_menu() end, map_opts)
     vim.keymap.set("n", km.refresh, function() self:refresh_buffer_items() end, map_opts)
@@ -165,8 +165,8 @@ function TodoSidebar:_create_sidebar()
     vim.api.nvim_buf_set_option(bufnr, "swapfile", false)
     vim.api.nvim_buf_set_option(bufnr, "filetype", "TodoSidebar")
 
-    local win_cmd_prefix = sidebar_config.position == "left" and "topleft " or "botright "
-    vim.cmd(win_cmd_prefix .. "vertical " .. sidebar_config.width .. " new")
+    local win_cmd_prefix = sidebar_config.sidebar.position == "left" and "topleft " or "botright "
+    vim.cmd(win_cmd_prefix .. "vertical " .. sidebar_config.sidebar.width .. " new")
     local winid = vim.api.nvim_get_current_win()
 
     vim.api.nvim_win_set_buf(winid, bufnr)
@@ -177,7 +177,7 @@ end
 function TodoSidebar:open_menu()
     -- if window exists
     if self.winid and vim.api.nvim_win_is_valid(self.winid) then
-        if sidebar_config.auto_focus then
+        if sidebar_config.sidebar.auto_focus then
             vim.api.nvim_set_current_win(self.winid)
         end
         self:refresh_buffer_items()
@@ -202,8 +202,11 @@ end
 
 ---toggle sidebar window open and closed
 function TodoSidebar:toggle()
+    print("Sidebar config in toggle")
+
+    -- get this working for custom opts
     if vim.tbl_isempty(sidebar_config) then
-        self:setup(config.options.sidebar or {})
+        self:setup(config.get_default_config or {})
     end
 
     if self.winid and vim.api.nvim_win_is_valid(self.winid) then

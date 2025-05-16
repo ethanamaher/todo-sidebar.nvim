@@ -74,47 +74,51 @@ return {
 
         config = function()
             require("todo-sidebar").setup({
-                -- define custom keyword list
-                keywords = { "TODO", "FIXME", "NOTE", "REVIEW", }
-
-                -- case sensitivity for search
-                case_sensitive = false,
-
-                -- max number of results in sidebar window
-                 max_results = 500,
-
                 sidebar = {
-                    -- sidebar width
-                    width = 40,
+                    -- git_cmd = "git",
 
-                    -- position of sidebar, "right" or "left"
-                    position = "right",
+                    -- custom keyword list and case sensitivity
+                    -- keywords = { "TODO", "FIXME", "NOTE", "REVIEW" },
+                    -- case_sensitive = false,
 
-                    -- does focus go to sidebar on open
-                    auto_focus = true,
+                    -- max number of results in sidebar
+                    -- max_results = 500,
 
-                    -- close sidebar after jumping to item
-                    auto_close_on_jump = false,
+                    -- sidebar width in characters
+                    -- width = 40,
 
+                    -- sidebar position "left" or "right"
+                    -- position = "right",
 
-                    keymaps = {
-                        close           = "q",
-                        refresh         = "r",
+                    -- focus in sidebar on open
+                    -- auto_focus = true,
 
-                        -- jump to item
-                        jmp_to          = "<CR>",
+                    -- close sidebar on jump
+                    -- auto_close_on_jump = false,
 
-                        -- jump to item, open new buffer in vsplit
-                        jmp_to_vsplit   = "<C-v>",
+                    -- custom keymap for sidebar nav
+                    -- keymaps = {
+                    --     close sidebar
+                    --     close           = "q",
 
-                        -- jump to item, open new buffer in vsplit
-                        jmp_to_split    = "<C-s>",
+                    --     refresh items in sidebar
+                    --     refresh         = "r",
 
-                        next_item       = "j",
-                        prev_item       = "k",
-                        scroll_down     = "<C-d>",
-                        scroll_up       = "<C-k>",
-                    },
+                    --     jump to item in sidebar menu
+                    --     jmp_to          = "<CR>",
+
+                    --     jump to item in sidebar menu, open new buffer in vsplit
+                    --     jmp_to_vsplit   = "<C-v>",
+
+                    --     jump to item in sidebar menu, open new buffer in split
+                    --     jmp_to_split    = "<C-s>",
+
+                    --     next_item       = "j",
+                    --     prev_item       = "k",
+
+                    --     scroll_down     = "<C-d>",
+                    --     scroll_up       = "<C-k>",
+                    -- },
                 }
             })
 

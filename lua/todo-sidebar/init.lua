@@ -5,10 +5,11 @@ local TodoSidebar = {}
 TodoSidebar.__index = TodoSidebar
 
 function TodoSidebar:new()
+    -- initialize with default config
     local config = Config.get_default_config()
     return setmetatable({
         config = config,
-        sidebar = Sidebar:new()
+        sidebar = Sidebar:new(config)
     }, self)
 end
 
@@ -21,7 +22,7 @@ function TodoSidebar.setup(self, user_opts)
     end
 
     -- works for setting new keymap
-    self.config = Config.add_config(user_opts, self.config)
+    self.sidebar.sidebar_config = Config.add_config(user_opts, self.config)
 end
 
 return inst

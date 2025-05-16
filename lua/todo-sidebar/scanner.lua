@@ -6,7 +6,7 @@ local config
 local function get_config(sidebar_config)
     config = sidebar_config
     if not config then
-        config = require("todo-sidebar.config").get_default_config().default
+        config = require("todo-sidebar.config").get_default_config()
     end
     return config
 end
@@ -27,7 +27,11 @@ function M.find_todos_git_grep(sidebar, repo_root, callback)
 
     local git_cmd = current_config.git_cmd
     -- -i case insensitive
-    local args = { "-C", repo_root, "grep", "-n", "-E", "-i" }
+    local args = { "-C", repo_root, "grep", "-n", "-E" }
+
+    if not current_config.case_sensitive then
+        table.insert(args, "-i")
+    end
 
     table.insert(args, grep_pattern)
 

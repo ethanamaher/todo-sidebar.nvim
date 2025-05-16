@@ -9,15 +9,14 @@ local utils = require("todo-sidebar.utils")
 ---@field winid number
 ---@field line_data table
 local TodoSidebar = {}
-
-local sidebar_config = {}
-
 TodoSidebar.__index = TodoSidebar
-function TodoSidebar:new()
+
+function TodoSidebar:new(sidebar_config)
     return setmetatable({
         bufnr = nil,
         winid = nil,
         line_data = {},
+        sidebar_config = sidebar_config,
     }, self)
 end
 ---
@@ -27,7 +26,7 @@ end
 ---@param opts? table|nil sidebar config options from config.lua
 function TodoSidebar:setup(opts)
     local defaults = config.get_default_config()
-    sidebar_config = vim.tbl_deep_extend("force", {}, defaults, opts or {})
+    self.sidebar_config = vim.tbl_extend("force", defaults, opts or {})
 end
 
 -- TODO highlight mappings for keywords and items in entry string
@@ -95,7 +94,7 @@ function TodoSidebar:refresh_buffer_items()
     end
 
     vim.notify("Scanning for keywords...", vim.log.levels.INFO, { title = "TodoSidebar" })
-    scanner.find_todos_git_grep(sidebar_config, repo_root, function(results)
+    scanner.find_todos_git_grep(self.sidebar_config, repo_root, function(results)
         self:populate_sidebar_buffer(results)
         vim.notify("TODOs updated", vim.log.levels.INFO, { title = "TodoSidebar" })
     end)
@@ -134,14 +133,21 @@ function TodoSidebar:select_menu_item(jmp_command)
     else
         vim.notify("Error jumping to this item", vim.log.levels.WARN, { title = "TodoSidebar" })
     end
+
+    -- auto close on jump
+    if self.sidebar_config.auto_close_on_jump then
+        self:close_menu()
+    end
 end
 
 ---set up default key mappings for sidebar
 function TodoSidebar:setup_mappings()
     local map_opts = { noremap = true, silent = true, buffer = self.bufnr }
-    local km = sidebar_config.sidebar.keymaps
+    local km = self.sidebar_config.keymaps
 
-    vim.keymap.set("n", km.close, function() self:close_menu() end, map_opts)
+    if km.close then
+        vim.keymap.set("n", km.close, function() self:close_menu() end, map_opts)
+    end
     vim.keymap.set("n", km.refresh, function() self:refresh_buffer_items() end, map_opts)
 
     vim.keymap.set("n", km.jmp_to, function() self:select_menu_item("edit") end, map_opts)
@@ -165,8 +171,8 @@ function TodoSidebar:_create_sidebar()
     vim.api.nvim_buf_set_option(bufnr, "swapfile", false)
     vim.api.nvim_buf_set_option(bufnr, "filetype", "TodoSidebar")
 
-    local win_cmd_prefix = sidebar_config.sidebar.position == "left" and "topleft " or "botright "
-    vim.cmd(win_cmd_prefix .. "vertical " .. sidebar_config.sidebar.width .. " new")
+    local win_cmd_prefix = self.sidebar_config.position == "left" and "topleft " or "botright "
+    vim.cmd(win_cmd_prefix .. "vertical " .. self.sidebar_config.width .. " new")
     local winid = vim.api.nvim_get_current_win()
 
     vim.api.nvim_win_set_buf(winid, bufnr)
@@ -177,7 +183,7 @@ end
 function TodoSidebar:open_menu()
     -- if window exists
     if self.winid and vim.api.nvim_win_is_valid(self.winid) then
-        if sidebar_config.sidebar.auto_focus then
+        if self.sidebar_config.auto_focus then
             vim.api.nvim_set_current_win(self.winid)
         end
         self:refresh_buffer_items()
@@ -202,11 +208,9 @@ end
 
 ---toggle sidebar window open and closed
 function TodoSidebar:toggle()
-    print("Sidebar config in toggle")
-
     -- get this working for custom opts
-    if vim.tbl_isempty(sidebar_config) then
-        self:setup(config.get_default_config or {})
+    if vim.tbl_isempty(self.sidebar_config) then
+        self:setup(config.get_default_config() or {})
     end
 
     if self.winid and vim.api.nvim_win_is_valid(self.winid) then

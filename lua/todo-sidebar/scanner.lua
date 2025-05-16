@@ -29,7 +29,6 @@ function M.find_todos_git_grep(repo_root, callback)
     -- -i case insensitive
     local args = { "-C", repo_root, "grep", "-n", "-E", "-i" }
 
-
     table.insert(args, grep_pattern)
 
     local results = {}

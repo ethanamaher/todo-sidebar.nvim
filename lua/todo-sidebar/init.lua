@@ -1,22 +1,24 @@
-local M = {}
+local Config = require("todo-sidebar.config")
+local Sidebar = require("todo-sidebar.sidebar")
 
-local config = require("todo-sidebar.config")
-local sidebar = require("todo-sidebar.sidebar")
+local TodoSidebar = {}
+TodoSidebar.__index = TodoSidebar
 
-function M.setup(user_opts)
-    config.setup(user_opts)
-
-    vim.api.nvim_create_user_command("TodoSidebarToggle", function()
-            sidebar.toggle()
-        end, {
-        desc = "Scan project for TODOs, FIXMEs, etc."
-    })
-
-    vim.api.nvim_create_user_command("TodoSidebarRefresh", function()
-            sidebar.refresh_buffer_items()
-        end, {
-        desc = "Refresh items in sidebar"
-    })
+function TodoSidebar:new()
+    return setmetatable({
+        config = Config.options.defaults,
+        sidebar = Sidebar:new()
+    }, self)
 end
 
-return M
+local inst = TodoSidebar:new()
+
+function TodoSidebar.setup(self, user_opts)
+    if self ~= inst then
+        self = inst
+    end
+
+    Config:setup(user_opts)
+end
+
+return inst

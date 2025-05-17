@@ -84,8 +84,8 @@ return {
                     -- max number of results in sidebar
                     -- max_results = 500,
 
-                    -- sidebar width in characters
-                    -- width = 40,
+                    -- sidebar width percentage
+                    -- width = 50
 
                     -- sidebar position "left" or "right"
                     -- position = "right",

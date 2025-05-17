@@ -1,5 +1,5 @@
 local Config = require("todo-sidebar.config")
-local Sidebar = require("todo-sidebar.sidebar")
+local SidebarUI = require("todo-sidebar.sidebar")
 
 local TodoSidebar = {}
 TodoSidebar.__index = TodoSidebar
@@ -10,7 +10,7 @@ function TodoSidebar:new()
 	local config = Config.get_default_config()
 	return setmetatable({
 		config = config,
-		sidebar = Sidebar:new(config),
+		sidebar = SidebarUI:new(config),
 	}, self)
 end
 

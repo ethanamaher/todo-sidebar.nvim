@@ -200,24 +200,24 @@ end
 --- only called at beginning, buf and win should not exist
 function TodoSideBarUI:_create_sidebar()
     local prev_win = vim.api.nvim_get_current_win()
-	local bufnr = vim.api.nvim_create_buf(false, true)
+	  local bufnr = vim.api.nvim_create_buf(false, true)
 
     vim.api.nvim_buf_set_option(bufnr, "bufhidden", "hide")
-	vim.api.nvim_buf_set_option(bufnr, "buftype", "nofile")
-	vim.api.nvim_buf_set_option(bufnr, "swapfile", false)
-	vim.api.nvim_buf_set_option(bufnr, "filetype", "TodoSideBarUI")
+	  vim.api.nvim_buf_set_option(bufnr, "buftype", "nofile")
+	  vim.api.nvim_buf_set_option(bufnr, "swapfile", false)
+	  vim.api.nvim_buf_set_option(bufnr, "filetype", "TodoSideBarUI")
 
-	local win_cmd_prefix = self.sidebar_config.position == "left" and "topleft " or "botright "
-	vim.cmd(win_cmd_prefix .. "vertical " .. self.sidebar_config.width .. " new")
-	local winid = vim.api.nvim_get_current_win()
-    vim.api.nvim_win_set_buf(winid, bufnr)
+	  local win_cmd_prefix = self.sidebar_config.position == "left" and "topleft " or "botright "
+	  vim.cmd(win_cmd_prefix .. "vertical " .. self.sidebar_config.width .. " new")
+    local winid = vim.api.nvim_get_current_win()
+      vim.api.nvim_win_set_buf(winid, bufnr)
 
-    -- if not autofocus, set window to previous window
-    if not self.sidebar_config.auto_focus then
-        vim.api.nvim_set_current_win(prev_win)
-    end
+      -- if not autofocus, set window to previous window
+      if not self.sidebar_config.auto_focus then
+          vim.api.nvim_set_current_win(prev_win)
+      end
 
-	return winid, bufnr
+    return winid, bufnr
 end
 
 ---open sidebar window and refresh_list
@@ -225,16 +225,13 @@ function TodoSideBarUI:open_menu()
 	-- if sidebar window exists, set it to current window and refresh list
 	if self.winid and vim.api.nvim_win_is_valid(self.winid) then
         vim.api.nvim_set_current_win(self.winid)
-		self:refresh_list()
-		return
-	end
+		    self:refresh_list()
+    return
+  end
 
-	local winid, bufnr = self:_create_sidebar()
-	self.winid = winid
-	self.bufnr = bufnr
-
-	self:setup_mappings()
-	self:refresh_list()
+	local winid = vim.api.nvim_get_current_win()
+	vim.api.nvim_win_set_buf(winid, bufnr)
+	return winid, bufnr
 end
 
 ---close sidebar window, preserves buffer and line data

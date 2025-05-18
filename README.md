@@ -46,9 +46,9 @@ calling open() when sidebar is already open will cause it to refresh the list it
 
 
 ### Refresh Sidebar Directly
-you can refresh the sidebar directyly with
+you can refresh the sidebar directly with
 ```lua
-lua require("todo-sidebar.sidebar").refresh_buffer_items()
+lua require("todo-sidebar.sidebar").refresh_list()
 ```
 if the sidebar is not open it will just return out
 

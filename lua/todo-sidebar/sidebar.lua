@@ -38,8 +38,8 @@ local function format_buf_line(item)
 	-- with relative file path it is too long i think, either need to increase
 	-- width or shorter fmt str
 
-    -- tentative formatting
-    local short_filename = vim.fn.fnamemodify(item.file_relative, ":t")
+	-- tentative formatting
+	local short_filename = vim.fn.fnamemodify(item.file_relative, ":t")
 
 	return string.format("[%s] %s (%s:%d)", item.keyword, item.text, short_filename, item.line_number)
 
@@ -80,33 +80,32 @@ function TodoSideBarUI:populate_sidebar_buffer(items)
 	vim.api.nvim_buf_set_option(self.bufnr, "modifiable", false)
 	vim.api.nvim_buf_set_option(self.bufnr, "modified", false)
 
-    -- FIXME holy this is scuffed
-    -- initial highlight grouping
-    for i, line in ipairs(lines) do
-        local hl_group
-        local match_len
-        if line:find("TODO") then
-            hl_group = "Todo"
-            match_len = 4
-        elseif line:find("FIXME") then
-            hl_group = "WarningMsg"
-            match_len = 5
-        elseif line:find("NOTE") then
-            hl_group = "Comment"
-            match_len = 4
-        end
+	-- FIXME holy this is scuffed
+	-- initial highlight grouping
+	for i, line in ipairs(lines) do
+		local hl_group
+		local match_len
+		if line:find("TODO") then
+			hl_group = "Todo"
+			match_len = 4
+		elseif line:find("FIXME") then
+			hl_group = "WarningMsg"
+			match_len = 5
+		elseif line:find("NOTE") then
+			hl_group = "Comment"
+			match_len = 4
+		end
 
-        if hl_group then
-            vim.api.nvim_buf_add_highlight(self.bufnr, -1, hl_group, i-1, 0, match_len+2)
-        end
-    end
-
+		if hl_group then
+			vim.api.nvim_buf_add_highlight(self.bufnr, -1, hl_group, i - 1, 0, match_len + 2)
+		end
+	end
 end
 
 ---refresh the items in the sidebar
 ---runs scanner.find_todos_git_grep to get an up to date refresh of any entries
 ---that need to be added to buffer
-function TodoSideBarUI:refresh_buffer_items()
+function TodoSideBarUI:refresh_list()
 	if not self.bufnr or not vim.api.nvim_buf_is_valid(self.bufnr) then
 		-- sidebar not open notify
 		return
@@ -175,7 +174,7 @@ function TodoSideBarUI:setup_mappings()
 	end, map_opts)
 
 	vim.keymap.set("n", km.refresh, function()
-		self:refresh_buffer_items()
+		self:refresh_list()
 	end, map_opts)
 
 	vim.keymap.set("n", km.jmp_to, function()
@@ -200,28 +199,33 @@ end
 ---create the window and buffer for sidebar
 --- only called at beginning, buf and win should not exist
 function TodoSideBarUI:_create_sidebar()
+    local prev_win = vim.api.nvim_get_current_win()
 	local bufnr = vim.api.nvim_create_buf(false, true)
-	vim.api.nvim_buf_set_option(bufnr, "bufhidden", "hide")
+
+    vim.api.nvim_buf_set_option(bufnr, "bufhidden", "hide")
 	vim.api.nvim_buf_set_option(bufnr, "buftype", "nofile")
 	vim.api.nvim_buf_set_option(bufnr, "swapfile", false)
 	vim.api.nvim_buf_set_option(bufnr, "filetype", "TodoSideBarUI")
 
 	local win_cmd_prefix = self.sidebar_config.position == "left" and "topleft " or "botright "
 	vim.cmd(win_cmd_prefix .. "vertical " .. self.sidebar_config.width .. " new")
-
 	local winid = vim.api.nvim_get_current_win()
-	vim.api.nvim_win_set_buf(winid, bufnr)
+    vim.api.nvim_win_set_buf(winid, bufnr)
+
+    -- if not autofocus, set window to previous window
+    if not self.sidebar_config.auto_focus then
+        vim.api.nvim_set_current_win(prev_win)
+    end
+
 	return winid, bufnr
 end
 
----open sidebar window and refresh_buffer_items
+---open sidebar window and refresh_list
 function TodoSideBarUI:open_menu()
-	-- if window exists
+	-- if sidebar window exists, set it to current window and refresh list
 	if self.winid and vim.api.nvim_win_is_valid(self.winid) then
-		if self.sidebar_config.auto_focus then
-			vim.api.nvim_set_current_win(self.winid)
-		end
-		self:refresh_buffer_items()
+        vim.api.nvim_set_current_win(self.winid)
+		self:refresh_list()
 		return
 	end
 
@@ -230,7 +234,7 @@ function TodoSideBarUI:open_menu()
 	self.bufnr = bufnr
 
 	self:setup_mappings()
-	self:refresh_buffer_items()
+	self:refresh_list()
 end
 
 ---close sidebar window, preserves buffer and line data

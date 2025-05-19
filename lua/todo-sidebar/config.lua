@@ -3,21 +3,20 @@ local M = {}
 function M.get_default_config()
 	return {
 		sidebar = {
-			keywords = { "TODO", "FIXME", "NOTE", },
+			keywords = {
+                { keyword="TODO", hl_group="Todo" },
+                { keyword="FIXME", hl_group="WarningMsg" },
+                { keyword="NOTE", hl_group="Comment" },
+            },
 			case_sensitive = false,
 
 			ignore_patterns = {
 				".git/",
 			},
 
-			git_tracked_only = true,
-
 			max_results = 500,
-			search_strategy = "git_grep",
-
 			git_cmd = "git",
 
-			git_grep_args = {},
 			width = 40,
 
 			position = "right",

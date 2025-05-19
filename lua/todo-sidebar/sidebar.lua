@@ -29,8 +29,6 @@ function TodoSideBarUI:setup(opts)
 	self.sidebar_config = vim.tbl_extend("force", defaults, opts or {})
 end
 
--- TODO highlight mappings for keywords and items in entry string
-
 ---format a keyword entry for sidebar
 ---@param item table table of keyword entries { keyword, file_relative, line_number, text }
 ---@return string formatted string
@@ -79,25 +77,35 @@ function TodoSideBarUI:populate_sidebar_buffer(items)
 	vim.api.nvim_buf_set_option(self.bufnr, "modifiable", false)
 	vim.api.nvim_buf_set_option(self.bufnr, "modified", false)
 
-	-- FIXME holy this is scuffed
-	-- initial highlight grouping
+
+    -- highligh groups
 	for i, line in ipairs(lines) do
 		local hl_group
 		local match_len
-		if line:find("TODO") then
-			hl_group = "Todo"
-			match_len = 4
-		elseif line:find("FIXME") then
-			hl_group = "WarningMsg"
-			match_len = 5
-		elseif line:find("NOTE") then
-			hl_group = "Comment"
-			match_len = 4
-		end
+
+        for _, kw_pair in ipairs(self.sidebar_config.keywords) do
+            if type(kw_pair) == "table" then
+                if line:find(kw_pair.keyword) then
+                    if kw_pair.hl_group then
+                        hl_group = kw_pair.hl_group
+                    end
+
+                    match_len = #kw_pair.keyword
+                    break
+                end
+            elseif type(kw_pair) == "string" then
+                if line:find(kw_pair) then
+                    match_len = #kw_pair
+                    break
+                end
+            end
+        end
 
 		if hl_group then
 			vim.api.nvim_buf_add_highlight(self.bufnr, -1, hl_group, i - 1, 0, match_len + 2)
-		end
+        else
+			vim.api.nvim_buf_add_highlight(self.bufnr, -1, "Comment", i - 1, 0, match_len + 2)
+        end
 	end
 end
 

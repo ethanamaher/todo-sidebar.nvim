@@ -77,8 +77,20 @@ return {
                 sidebar = {
                     -- git_cmd = "git",
 
-                    -- custom keyword list and case sensitivity
-                    -- keywords = { "TODO", "FIXME", "NOTE", "REVIEW" },
+                    -- custom keyword list
+                    -- keywords = {
+                    --     -- keyword to match and highlight group to use
+                    --     -- hl_group is optional, will default to hl_group="Comment"
+                    --     { keyword="TODO", hl_group="Todo" },
+                    --     { keyword="FIXME", hl_group="WarningMsg" },
+                    --     { keyword="NOTE", hl_group="Comment" },
+                    --     -- { keyword="NO_HL_GROUP" },
+
+                    --     -- can also just do string, same thing will do hl_group="Comment"
+                    --     -- "NO_TABLE"
+                    -- },
+
+                    -- keyword case sensitivity
                     -- case_sensitive = false,
 
                     -- max number of results in sidebar

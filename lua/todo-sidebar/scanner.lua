@@ -25,7 +25,7 @@ function M.find_todos_git_grep(sidebar, repo_root, callback)
 		if type(kw_pair) == "table" then
 			table.insert(patterns, "\\b" .. kw_pair.keyword .. "\\b")
 		elseif type(kw_pair) == "string" then
-			table.insert(patterns, "\\b" .. kw_pair.. "\\b")
+			table.insert(patterns, "\\b" .. kw_pair .. "\\b")
 		end
 	end
 
@@ -52,12 +52,19 @@ function M.find_todos_git_grep(sidebar, repo_root, callback)
 			for _, line in ipairs(output_lines) do
 				-- parse git grep output <filepath>:<line_number>:<text>
 				local file_rel, lnum, text = line:match("([^:]+):(%d+):(.*)")
-				local loc = -1
+
+				-- TODO check if line is a comment somehow
+				-- could require weird treesitter parsing or just guess
+				-- weird with multiline comments
+
 				if file_rel and lnum and text then
+					local loc
 					local matched = ""
 					local search_for_kw = current_config.case_sensitive and text or text:lower()
+
 					for _, kw_pair in ipairs(current_config.keywords) do
 						local kw
+
 						if type(kw_pair) == "table" then
 							kw = current_config.case_sensitive and kw_pair.keyword or kw_pair.keyword:lower()
 							loc = search_for_kw:find(kw, 1, true)
@@ -75,18 +82,20 @@ function M.find_todos_git_grep(sidebar, repo_root, callback)
 						end
 					end
 
-					-- remove up to and past keyword matched
-					local trimmed_text = text:sub(loc + #matched)
-					-- remove leading white space
-					trimmed_text = trimmed_text:gsub("^%s*", "")
+					if loc then
+						-- remove up to and past keyword matched
+						local trimmed_text = text:sub(loc + #matched)
+						-- remove leading white space
+						trimmed_text = trimmed_text:gsub("^%s*", "")
 
-					table.insert(results, {
-						file_absolute = Path:new(repo_root, file_rel):absolute(),
-						file_relative = file_rel,
-						line_number = tonumber(lnum),
-						text = trimmed_text,
-						keyword = matched,
-					})
+						table.insert(results, {
+							file_absolute = Path:new(repo_root, file_rel):absolute(),
+							file_relative = file_rel,
+							line_number = tonumber(lnum),
+							text = trimmed_text,
+							keyword = matched,
+						})
+					end
 				end
 			end
 			callback(results)

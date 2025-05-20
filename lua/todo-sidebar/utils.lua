@@ -1,4 +1,5 @@
 local Path = require("plenary.path")
+local Filetype = require("plenary.filetype")
 
 local M = {}
 

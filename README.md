@@ -130,6 +130,9 @@ return {
 
                     --     scroll_down     = "<C-d>",
                     --     scroll_up       = "<C-k>",
+
+                    --     decrease_width = "<",
+                    --     increase_width = ">",
                     -- },
                 }
             })

@@ -201,6 +201,9 @@ function TodoSideBarUI:setup_mappings()
 
 	vim.keymap.set("n", km.scroll_down, "<C-d>", map_opts)
 	vim.keymap.set("n", km.scroll_up, "<C-u>", map_opts)
+
+    vim.keymap.set("n", km.decrease_width, "10<C-w><", map_opts)
+    vim.keymap.set("n", km.increase_width, "10<C-w>>", map_opts)
 end
 
 ---create the window and buffer for sidebar

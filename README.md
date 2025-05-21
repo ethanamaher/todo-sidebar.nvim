@@ -46,9 +46,9 @@ calling open() when sidebar is already open will cause it to refresh the list it
 
 
 ### Refresh Sidebar Directly
-you can refresh the sidebar directyly with
+you can refresh the sidebar directly with
 ```lua
-lua require("todo-sidebar.sidebar").refresh_buffer_items()
+lua require("todo-sidebar.sidebar").refresh_list()
 ```
 if the sidebar is not open it will just return out
 
@@ -77,8 +77,20 @@ return {
                 sidebar = {
                     -- git_cmd = "git",
 
-                    -- custom keyword list and case sensitivity
-                    -- keywords = { "TODO", "FIXME", "NOTE", "REVIEW" },
+                    -- custom keyword list
+                    -- keywords = {
+                    --     -- keyword to match and highlight group to use
+                    --     -- hl_group is optional, will default to hl_group="Comment"
+                    --     { keyword="TODO", hl_group="Todo" },
+                    --     { keyword="FIXME", hl_group="WarningMsg" },
+                    --     { keyword="NOTE", hl_group="Comment" },
+                    --     -- { keyword="NO_HL_GROUP" },
+
+                    --     -- can also just do string, same thing will do hl_group="Comment"
+                    --     -- "NO_TABLE"
+                    -- },
+
+                    -- keyword case sensitivity
                     -- case_sensitive = false,
 
                     -- max number of results in sidebar
@@ -118,6 +130,9 @@ return {
 
                     --     scroll_down     = "<C-d>",
                     --     scroll_up       = "<C-k>",
+
+                    --     decrease_width = "<",
+                    --     increase_width = ">",
                     -- },
                 }
             })

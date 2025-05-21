@@ -17,9 +17,10 @@ function M.get_default_config()
 			max_results = 500,
 			git_cmd = "git",
 
-			width = 40,
-
+			width = 40, -- (%)
+            height = 15, -- (lines)
 			position = "right",
+
 			auto_focus = true,
 			auto_close_on_jump = false,
 			keymaps = {
@@ -37,6 +38,9 @@ function M.get_default_config()
 
                 decrease_width = "<",
                 increase_width = ">",
+
+                decrease_height = "<",
+                increase_height = ">",
 			},
 		},
 	}

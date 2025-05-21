@@ -175,6 +175,7 @@ end
 function TodoSideBarUI:setup_mappings()
 	local map_opts = { noremap = true, silent = true, buffer = self.bufnr }
 	local km = self.sidebar_config.keymaps
+    local pos = self.sidebar_config.position
 
 	vim.keymap.set("n", km.close, function()
 		self:close_menu()
@@ -202,8 +203,17 @@ function TodoSideBarUI:setup_mappings()
 	vim.keymap.set("n", km.scroll_down, "<C-d>", map_opts)
 	vim.keymap.set("n", km.scroll_up, "<C-u>", map_opts)
 
-    vim.keymap.set("n", km.decrease_width, "10<C-w><", map_opts)
-    vim.keymap.set("n", km.increase_width, "10<C-w>>", map_opts)
+    -- since using <> for both width and height have to make sure to specify in mapping
+    -- otherwise it will only do whatever is set last
+    -- not a problem since its either or, cant be both
+    if pos == "left" or pos == "right" then
+        vim.keymap.set("n", km.decrease_width, "10<C-w><", map_opts)
+        vim.keymap.set("n", km.increase_width, "10<C-w>>", map_opts)
+    elseif pos == "top" or pos == "bottom" then
+        vim.keymap.set("n", km.decrease_height, "1<C-w>-", map_opts)
+        vim.keymap.set("n", km.increase_height, "1<C-w>+", map_opts)
+    end
+
 end
 
 ---create the window and buffer for sidebar
@@ -217,8 +227,20 @@ function TodoSideBarUI:_create_sidebar()
 	vim.api.nvim_buf_set_option(bufnr, "swapfile", false)
 	vim.api.nvim_buf_set_option(bufnr, "filetype", "TodoSideBarUI")
 
-	local win_cmd_prefix = self.sidebar_config.position == "left" and "topleft " or "botright "
-	vim.cmd(win_cmd_prefix .. "vertical " .. self.sidebar_config.width .. " new")
+    local win_cmd_prefix
+    -- open horizontal window
+    if self.sidebar_config.position == "bottom" or self.sidebar_config.position == "top" then
+	    win_cmd_prefix = self.sidebar_config.position == "top" and "topleft " or "botright "
+        vim.cmd(win_cmd_prefix .. "horizontal " .. self.sidebar_config.height .. " new")
+    -- open vertical window
+    elseif self.sidebar_config.position == "left" or self.sidebar_config.position == "right" then
+	    win_cmd_prefix = self.sidebar_config.position == "left" and "topleft " or "botright "
+        vim.cmd(win_cmd_prefix .. "vertical" .. self.sidebar_config.width .. " new")
+    else
+        vim.notify("Unknown sidebar position: " .. self.sidebar_config.position, vim.log.levels.WARN, { "TodoSidebar" })
+        return
+    end
+
 	local winid = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_buf(winid, bufnr)
 

@@ -33,20 +33,8 @@ end
 ---@param item table table of keyword entries { keyword, file_relative, line_number, text }
 ---@return string formatted string
 local function format_buf_line(item)
-	-- with relative file path it is too long i think, either need to increase
-	-- width or shorter fmt str
-
-	-- tentative formatting
 	local short_filename = vim.fn.fnamemodify(item.file_relative, ":t")
-
 	return string.format("[%s] %s (%s:%d)", item.keyword, item.text, short_filename, item.line_number)
-
-	-- return string.format("[%s] %s:%s: %s",
-	--    item.keyword,
-	--    item.file_relative,
-	--    item.line_number,
-	--    item.text
-	--)
 end
 
 ---populate the sidebar buffer with a table of keyword entry items
@@ -77,35 +65,34 @@ function TodoSideBarUI:populate_sidebar_buffer(items)
 	vim.api.nvim_buf_set_option(self.bufnr, "modifiable", false)
 	vim.api.nvim_buf_set_option(self.bufnr, "modified", false)
 
-
-    -- highligh groups
+	-- highlight groups
 	for i, line in ipairs(lines) do
 		local hl_group
 		local match_len
 
-        for _, kw_pair in ipairs(self.sidebar_config.keywords) do
-            if type(kw_pair) == "table" then
-                if line:find(kw_pair.keyword) then
-                    if kw_pair.hl_group then
-                        hl_group = kw_pair.hl_group
-                    end
+		for _, kw_pair in ipairs(self.sidebar_config.keywords) do
+			if type(kw_pair) == "table" then
+				if line:find(kw_pair.keyword) then
+					if kw_pair.hl_group then
+						hl_group = kw_pair.hl_group
+					end
 
-                    match_len = #kw_pair.keyword
-                    break
-                end
-            elseif type(kw_pair) == "string" then
-                if line:find(kw_pair) then
-                    match_len = #kw_pair
-                    break
-                end
-            end
-        end
+					match_len = #kw_pair.keyword
+					break
+				end
+			elseif type(kw_pair) == "string" then
+				if line:find(kw_pair) then
+					match_len = #kw_pair
+					break
+				end
+			end
+		end
 
 		if hl_group then
 			vim.api.nvim_buf_add_highlight(self.bufnr, -1, hl_group, i - 1, 0, match_len + 2)
-        else
+		else
 			vim.api.nvim_buf_add_highlight(self.bufnr, -1, "Comment", i - 1, 0, match_len + 2)
-        end
+		end
 	end
 end
 
@@ -175,13 +162,14 @@ end
 function TodoSideBarUI:setup_mappings()
 	local map_opts = { noremap = true, silent = true, buffer = self.bufnr }
 	local km = self.sidebar_config.keymaps
+	local pos = self.sidebar_config.position
 
 	vim.keymap.set("n", km.close, function()
 		self:close_menu()
 	end, map_opts)
 
 	vim.keymap.set("n", km.refresh, function()
-        self:refresh_list()
+		self:refresh_list()
 	end, map_opts)
 
 	vim.keymap.set("n", km.jmp_to, function()
@@ -202,30 +190,50 @@ function TodoSideBarUI:setup_mappings()
 	vim.keymap.set("n", km.scroll_down, "<C-d>", map_opts)
 	vim.keymap.set("n", km.scroll_up, "<C-u>", map_opts)
 
-    vim.keymap.set("n", km.decrease_width, "10<C-w><", map_opts)
-    vim.keymap.set("n", km.increase_width, "10<C-w>>", map_opts)
+	-- since using <> for both width and height have to make sure to specify in mapping
+	-- otherwise it will only do whatever is set last
+	-- not a problem since its either or, cant be both
+	if pos == "left" or pos == "right" then
+		vim.keymap.set("n", km.decrease_width, "10<C-w><", map_opts)
+		vim.keymap.set("n", km.increase_width, "10<C-w>>", map_opts)
+	elseif pos == "top" or pos == "bottom" then
+		vim.keymap.set("n", km.decrease_height, "1<C-w>-", map_opts)
+		vim.keymap.set("n", km.increase_height, "1<C-w>+", map_opts)
+	end
 end
 
 ---create the window and buffer for sidebar
 --- only called at beginning, buf and win should not exist
 function TodoSideBarUI:_create_sidebar()
-    local prev_win = vim.api.nvim_get_current_win()
+	local prev_win = vim.api.nvim_get_current_win()
 	local bufnr = vim.api.nvim_create_buf(false, true)
 
-    vim.api.nvim_buf_set_option(bufnr, "bufhidden", "hide")
+	vim.api.nvim_buf_set_option(bufnr, "bufhidden", "hide")
 	vim.api.nvim_buf_set_option(bufnr, "buftype", "nofile")
 	vim.api.nvim_buf_set_option(bufnr, "swapfile", false)
 	vim.api.nvim_buf_set_option(bufnr, "filetype", "TodoSideBarUI")
 
-	local win_cmd_prefix = self.sidebar_config.position == "left" and "topleft " or "botright "
-	vim.cmd(win_cmd_prefix .. "vertical " .. self.sidebar_config.width .. " new")
-	local winid = vim.api.nvim_get_current_win()
-    vim.api.nvim_win_set_buf(winid, bufnr)
+	local win_cmd_prefix
+	-- open horizontal window
+	if self.sidebar_config.position == "bottom" or self.sidebar_config.position == "top" then
+		win_cmd_prefix = self.sidebar_config.position == "top" and "topleft " or "botright "
+		vim.cmd(win_cmd_prefix .. "horizontal " .. self.sidebar_config.height .. " new")
+	-- open vertical window
+	elseif self.sidebar_config.position == "left" or self.sidebar_config.position == "right" then
+		win_cmd_prefix = self.sidebar_config.position == "left" and "topleft " or "botright "
+		vim.cmd(win_cmd_prefix .. "vertical" .. self.sidebar_config.width .. " new")
+	else
+		vim.notify("Unknown sidebar position: " .. self.sidebar_config.position, vim.log.levels.WARN, { "TodoSidebar" })
+		return
+	end
 
-    -- if not autofocus, set window to previous window
-    if not self.sidebar_config.auto_focus then
-        vim.api.nvim_set_current_win(prev_win)
-    end
+	local winid = vim.api.nvim_get_current_win()
+	vim.api.nvim_win_set_buf(winid, bufnr)
+
+	-- if not autofocus, set window to previous window
+	if not self.sidebar_config.auto_focus then
+		vim.api.nvim_set_current_win(prev_win)
+	end
 
 	return winid, bufnr
 end
@@ -234,7 +242,7 @@ end
 function TodoSideBarUI:open_menu()
 	-- if sidebar window exists, set it to current window and refresh list
 	if self.winid and vim.api.nvim_win_is_valid(self.winid) then
-        vim.api.nvim_set_current_win(self.winid)
+		vim.api.nvim_set_current_win(self.winid)
 		self:refresh_list()
 		return
 	end

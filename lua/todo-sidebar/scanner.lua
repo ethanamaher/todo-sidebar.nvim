@@ -13,8 +13,41 @@ end
 
 local M = {}
 
+local current_config
+
+---find the index location of any keyword set in config in a line of text
+---@param text string line of text to search
+---@return number|nil location of any matched keyword, nil if no keyword found
+---@return string matched the matched keyword
+local function find_loc_of_keyword(text)
+	local location
+	local matched = ""
+	local search_for_kw = current_config.case_sensitive and text or text:lower()
+
+	for _, kw_pair in ipairs(current_config.keywords) do
+		local kw
+
+		if type(kw_pair) == "table" then
+			kw = current_config.case_sensitive and kw_pair.keyword or kw_pair.keyword:lower()
+			location = search_for_kw:find(kw, 1, true)
+			if search_for_kw:find(kw, 1, true) then
+				matched = kw_pair.keyword
+				break
+			end
+		elseif type(kw_pair) == "string" then
+			kw = current_config.case_sensitive and kw_pair or kw_pair:lower()
+			location = search_for_kw:find(kw, 1, true)
+			if search_for_kw:find(kw, 1, true) then
+				matched = kw_pair
+				break
+			end
+		end
+	end
+	return location, matched
+end
+
 function M.find_todos_git_grep(sidebar, repo_root, callback)
-	local current_config = get_config(sidebar)
+	current_config = get_config(sidebar)
 	if not repo_root then
 		callback({})
 		return
@@ -32,9 +65,8 @@ function M.find_todos_git_grep(sidebar, repo_root, callback)
 	local grep_pattern = table.concat(patterns, "|")
 
 	local git_cmd = current_config.git_cmd
-	-- -i case insensitive
-	local args = { "-C", repo_root, "grep", "-n", "-E" }
 
+	local args = { "-C", repo_root, "grep", "-n", "-E" }
 	if not current_config.case_sensitive then
 		table.insert(args, "-i")
 	end
@@ -53,38 +85,12 @@ function M.find_todos_git_grep(sidebar, repo_root, callback)
 				-- parse git grep output <filepath>:<line_number>:<text>
 				local file_rel, lnum, text = line:match("([^:]+):(%d+):(.*)")
 
-				-- TODO check if line is a comment somehow
-				-- could require weird treesitter parsing or just guess
-				-- weird with multiline comments
-
 				if file_rel and lnum and text then
-					local loc
-					local matched = ""
-					local search_for_kw = current_config.case_sensitive and text or text:lower()
+					local location, matched = find_loc_of_keyword(text)
 
-					for _, kw_pair in ipairs(current_config.keywords) do
-						local kw
-
-						if type(kw_pair) == "table" then
-							kw = current_config.case_sensitive and kw_pair.keyword or kw_pair.keyword:lower()
-							loc = search_for_kw:find(kw, 1, true)
-							if search_for_kw:find(kw, 1, true) then
-								matched = kw_pair.keyword
-								break
-							end
-						elseif type(kw_pair) == "string" then
-							kw = current_config.case_sensitive and kw_pair or kw_pair:lower()
-							loc = search_for_kw:find(kw, 1, true)
-							if search_for_kw:find(kw, 1, true) then
-								matched = kw_pair
-								break
-							end
-						end
-					end
-
-					if loc then
+					if location then
 						-- remove up to and past keyword matched
-						local trimmed_text = text:sub(loc + #matched)
+						local trimmed_text = text:sub(location + #matched)
 						-- remove leading white space
 						trimmed_text = trimmed_text:gsub("^%s*", "")
 

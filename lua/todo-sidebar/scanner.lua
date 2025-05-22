@@ -1,60 +1,56 @@
 local Job = require("plenary.job")
-
 local Path = require("plenary.path")
-local config
 
+local config
 local function get_config(sidebar_config)
 	config = sidebar_config
 	if not config then
 		config = require("todo-sidebar.config").get_default_config()
 	end
-	return config
 end
 
 local M = {}
-
-local current_config
 
 ---find the index location of any keyword set in config in a line of text
 ---@param text string line of text to search
 ---@return number|nil location of any matched keyword, nil if no keyword found
 ---@return string matched the matched keyword
 local function find_loc_of_keyword(text)
-	local location
-	local matched = ""
-	local search_for_kw = current_config.case_sensitive and text or text:lower()
+    local location
+    local matched = ""
+    local search_for_kw = config.case_sensitive and text or text:lower()
 
-	for _, kw_pair in ipairs(current_config.keywords) do
-		local kw
+    for _, kw_pair in ipairs(config.keywords) do
+        local kw
 
-		if type(kw_pair) == "table" then
-			kw = current_config.case_sensitive and kw_pair.keyword or kw_pair.keyword:lower()
-			location = search_for_kw:find(kw, 1, true)
-			if search_for_kw:find(kw, 1, true) then
-				matched = kw_pair.keyword
-				break
-			end
-		elseif type(kw_pair) == "string" then
-			kw = current_config.case_sensitive and kw_pair or kw_pair:lower()
-			location = search_for_kw:find(kw, 1, true)
-			if search_for_kw:find(kw, 1, true) then
-				matched = kw_pair
-				break
-			end
-		end
-	end
-	return location, matched
+        if type(kw_pair) == "table" then
+            kw = config.case_sensitive and kw_pair.keyword or kw_pair.keyword:lower()
+            location = search_for_kw:find(kw, 1, true)
+            if search_for_kw:find(kw, 1, true) then
+                matched = kw_pair.keyword
+                break
+            end
+        elseif type(kw_pair) == "string" then
+            kw = config.case_sensitive and kw_pair or kw_pair:lower()
+            location = search_for_kw:find(kw, 1, true)
+            if search_for_kw:find(kw, 1, true) then
+                matched = kw_pair
+                break
+            end
+        end
+    end
+    return location, matched
 end
 
-function M.find_todos_git_grep(sidebar, repo_root, callback)
-	current_config = get_config(sidebar)
+function M.find_todos_git_grep(sidebar_config, repo_root, callback)
+	get_config(sidebar_config)
 	if not repo_root then
 		callback({})
 		return
 	end
 	local patterns = {}
 
-	for _, kw_pair in ipairs(current_config.keywords) do
+	for _, kw_pair in ipairs(config.keywords) do
 		if type(kw_pair) == "table" then
 			table.insert(patterns, "\\b" .. kw_pair.keyword .. "\\b")
 		elseif type(kw_pair) == "string" then
@@ -64,10 +60,10 @@ function M.find_todos_git_grep(sidebar, repo_root, callback)
 
 	local grep_pattern = table.concat(patterns, "|")
 
-	local git_cmd = current_config.git_cmd
+	local git_cmd = config.git_cmd
 
 	local args = { "-C", repo_root, "grep", "-n", "-E" }
-	if not current_config.case_sensitive then
+	if not config.case_sensitive then
 		table.insert(args, "-i")
 	end
 
@@ -86,7 +82,7 @@ function M.find_todos_git_grep(sidebar, repo_root, callback)
 				local file_rel, lnum, text = line:match("([^:]+):(%d+):(.*)")
 
 				if file_rel and lnum and text then
-					local location, matched = find_loc_of_keyword(text)
+                    local location, matched = find_loc_of_keyword(text)
 
 					if location then
 						-- remove up to and past keyword matched

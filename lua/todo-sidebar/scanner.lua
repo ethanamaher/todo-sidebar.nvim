@@ -42,6 +42,10 @@ local function find_loc_of_keyword(text)
     return location, matched
 end
 
+---job for finding keywords using git grep
+---@param sidebar_config table user config
+---@param repo_root string absolute path to repo root
+---@param callback any
 function M.find_todos_git_grep(sidebar_config, repo_root, callback)
 	get_config(sidebar_config)
 	if not repo_root then
@@ -100,6 +104,16 @@ function M.find_todos_git_grep(sidebar_config, repo_root, callback)
 					end
 				end
 			end
+            -- sort results table by keyword first, then by file, then by line number
+            table.sort(results, function(a, b)
+                if a.keyword == b.keyword then
+                    if a.file_relative == b.file_relative then
+                        return a.line_number< b.line_number
+                    end
+                    return a.file_relative < b.file_relative
+                end
+                return a.keyword < b.keyword
+            end)
 			callback(results)
 		end),
 	}):start()
